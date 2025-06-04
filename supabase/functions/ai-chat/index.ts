@@ -21,11 +21,10 @@ serve(async (req) => {
       throw new Error('Missing required parameters');
     }
 
-    const grokApiKey = Deno.env.get('GROK_API_KEY');
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    const openaiApiKey = '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';
     
-    if (!grokApiKey) {
-      throw new Error('Grok API key not configured');
+    if (!openaiApiKey) {
+      throw new Error('OpenAI API key not configured');
     }
 
     let response;
@@ -33,10 +32,6 @@ serve(async (req) => {
     let apiUsed = '';
 
     if (chatType === 'image') {
-      if (!openaiApiKey) {
-        throw new Error('OpenAI API key not configured for image generation');
-      }
-      
       // Generate image with DALL-E 3
       const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
@@ -63,21 +58,21 @@ serve(async (req) => {
       responseType = 'image';
       apiUsed = 'openai-dalle3';
     } else {
-      // Use Grok for text generation and search
+      // Use OpenAI GPT for text generation and search
       let systemPrompt = 'You are a helpful AI assistant.';
       
       if (chatType === 'search') {
         systemPrompt = 'You are a helpful AI assistant that searches for and provides current, accurate information. When answering questions, provide detailed and up-to-date information from reliable sources.';
       }
 
-      const grokResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const gptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${grokApiKey}`,
+          'Authorization': `Bearer ${openaiApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.1-70b-versatile',
+          model: 'gpt-4o-mini',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: message }
@@ -87,14 +82,14 @@ serve(async (req) => {
         }),
       });
 
-      const grokData = await grokResponse.json();
+      const gptData = await gptResponse.json();
       
-      if (!grokResponse.ok) {
-        throw new Error(grokData.error?.message || 'Failed to get response from Grok');
+      if (!gptResponse.ok) {
+        throw new Error(gptData.error?.message || 'Failed to get response from OpenAI');
       }
 
-      response = grokData.choices[0].message.content;
-      apiUsed = 'grok';
+      response = gptData.choices[0].message.content;
+      apiUsed = 'openai-gpt';
     }
 
     // Store the conversation in the database

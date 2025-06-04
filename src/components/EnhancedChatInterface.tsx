@@ -30,7 +30,7 @@ const EnhancedChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your AI assistant. I can help you with text generation, image creation, and web search using advanced AI models. What would you like to do today?',
+      text: 'Hello! I\'m your AI assistant powered by OpenAI. I can help you with text generation, image creation, and web search. What would you like to do today?',
       sender: 'bot',
       type: 'text',
       timestamp: new Date()
@@ -46,7 +46,7 @@ const EnhancedChatInterface = () => {
       id: 'text',
       label: 'Text Generation',
       icon: <Sparkles className="w-5 h-5" />,
-      description: 'Generate creative text using Grok AI',
+      description: 'Generate creative text using GPT-4o-mini',
       color: 'from-blue-500 to-cyan-500'
     },
     {
@@ -60,7 +60,7 @@ const EnhancedChatInterface = () => {
       id: 'search',
       label: 'AI Search',
       icon: <Search className="w-5 h-5" />,
-      description: 'Search and get current information with Grok',
+      description: 'Search and get current information with GPT-4o-mini',
       color: 'from-green-500 to-emerald-500'
     }
   ];
@@ -112,7 +112,7 @@ const EnhancedChatInterface = () => {
       
       toast({
         title: "Response generated",
-        description: `Using ${data.apiUsed === 'openai-dalle3' ? 'DALL-E 3' : 'Grok AI'}`,
+        description: `Using ${data.apiUsed === 'openai-dalle3' ? 'DALL-E 3' : 'GPT-4o-mini'}`,
       });
 
     } catch (error: any) {
@@ -170,7 +170,7 @@ const EnhancedChatInterface = () => {
           <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             AI Chat Assistant
           </h1>
-          <p className="text-slate-400">Powered by Grok AI and DALL-E 3</p>
+          <p className="text-slate-400">Powered by OpenAI GPT-4o-mini and DALL-E 3</p>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-slate-400 text-sm">{user?.email}</span>
@@ -237,7 +237,7 @@ const EnhancedChatInterface = () => {
                     </span>
                     {message.apiUsed && (
                       <span className="text-xs opacity-70 bg-slate-700/50 px-2 py-1 rounded">
-                        {message.apiUsed === 'openai-dalle3' ? 'DALL-E 3' : 'Grok AI'}
+                        {message.apiUsed === 'openai-dalle3' ? 'DALL-E 3' : 'GPT-4o-mini'}
                       </span>
                     )}
                   </div>
@@ -320,7 +320,7 @@ const EnhancedChatInterface = () => {
               {chatOptions.find(opt => opt.id === selectedOption)?.icon}
               <span>Mode: {chatOptions.find(opt => opt.id === selectedOption)?.label}</span>
               <span className="opacity-60">
-                • {selectedOption === 'image' ? 'DALL-E 3' : 'Grok AI'}
+                • {selectedOption === 'image' ? 'DALL-E 3' : 'GPT-4o-mini'}
               </span>
             </div>
           )}
