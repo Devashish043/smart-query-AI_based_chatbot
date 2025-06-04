@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Sparkles, Search, Image, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './auth/AuthProvider';
+import ChatHistory from './ChatHistory';
+import NewConversationButton from './NewConversationButton';
 
 interface Message {
   id: string;
@@ -39,6 +40,8 @@ const EnhancedChatInterface = () => {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string>('text');
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [conversationTitle, setConversationTitle] = useState<string>('New Conversation');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const chatOptions: ChatOption[] = [
@@ -73,6 +76,107 @@ const EnhancedChatInterface = () => {
     scrollToBottom();
   }, [messages]);
 
+  const createOrGetConversation = async (firstMessage: string) => {
+    if (!user) return null;
+
+    if (currentConversationId) {
+      return currentConversationId;
+    }
+
+    try {
+      const title = firstMessage.length > 50 ? firstMessage.substring(0, 50) + '...' : firstMessage;
+      
+      const { data, error } = await supabase
+        .from('chat_conversations')
+        .insert({
+          user_id: user.id,
+          title: title
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setCurrentConversationId(data.id);
+      setConversationTitle(data.title);
+      return data.id;
+    } catch (error: any) {
+      console.error('Error creating conversation:', error);
+      return null;
+    }
+  };
+
+  const loadConversation = async (conversationId: string, title: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      const loadedMessages: Message[] = [];
+      data?.forEach((msg, index) => {
+        // Add user message
+        loadedMessages.push({
+          id: `${msg.id}-user`,
+          text: msg.message,
+          sender: 'user',
+          type: 'text',
+          timestamp: new Date(msg.created_at || '')
+        });
+
+        // Add bot response
+        if (msg.response) {
+          loadedMessages.push({
+            id: `${msg.id}-bot`,
+            text: msg.response,
+            sender: 'bot',
+            type: msg.response_type as 'text' | 'image' || 'text',
+            timestamp: new Date(msg.created_at || ''),
+            apiUsed: msg.api_used || undefined
+          });
+        }
+      });
+
+      setMessages(loadedMessages);
+      setCurrentConversationId(conversationId);
+      setConversationTitle(title);
+      
+      toast({
+        title: "Conversation loaded",
+        description: title
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to load conversation",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const startNewConversation = () => {
+    setMessages([
+      {
+        id: '1',
+        text: 'Hello! I\'m your AI assistant powered by OpenAI. I can help you with text generation, image creation, and web search. What would you like to do today?',
+        sender: 'bot',
+        type: 'text',
+        timestamp: new Date()
+      }
+    ]);
+    setCurrentConversationId(null);
+    setConversationTitle('New Conversation');
+    setInputValue('');
+    
+    toast({
+      title: "New conversation started",
+      description: "Ready for your next question!"
+    });
+  };
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || !user) return;
 
@@ -85,15 +189,20 @@ const EnhancedChatInterface = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageText = inputValue;
     setInputValue('');
     setIsTyping(true);
 
     try {
+      // Create or get conversation
+      const conversationId = await createOrGetConversation(messageText);
+
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: {
-          message: inputValue,
+          message: messageText,
           chatType: selectedOption,
-          userId: user.id
+          userId: user.id,
+          conversationId: conversationId
         }
       });
 
@@ -166,23 +275,30 @@ const EnhancedChatInterface = () => {
     <div className="min-h-screen flex flex-col max-w-4xl mx-auto p-4">
       {/* Header */}
       <div className="flex justify-between items-center py-8">
-        <div className="text-center flex-1">
-          <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            AI Chat Assistant
-          </h1>
-          <p className="text-slate-400">Powered by OpenAI GPT-4o-mini and DALL-E 3</p>
+        <div className="flex items-center gap-4">
+          <NewConversationButton onNewConversation={startNewConversation} />
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              AI Chat Assistant
+            </h1>
+            <p className="text-slate-400">Powered by OpenAI GPT-4o-mini and DALL-E 3</p>
+            <p className="text-slate-500 text-sm mt-1">{conversationTitle}</p>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-slate-400 text-sm">{user?.email}</span>
-          <Button
-            onClick={handleSignOut}
-            variant="outline"
-            size="sm"
-            className="border-slate-600 text-slate-300 hover:bg-slate-800"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
+          <div className="flex flex-col gap-2">
+            <ChatHistory onLoadConversation={loadConversation} />
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              size="sm"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -9,9 +9,34 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      chat_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           api_used: string | null
+          conversation_id: string | null
           created_at: string | null
           id: string
           message: string
@@ -21,6 +46,7 @@ export type Database = {
         }
         Insert: {
           api_used?: string | null
+          conversation_id?: string | null
           created_at?: string | null
           id?: string
           message: string
@@ -30,6 +56,7 @@ export type Database = {
         }
         Update: {
           api_used?: string | null
+          conversation_id?: string | null
           created_at?: string | null
           id?: string
           message?: string
@@ -37,7 +64,15 @@ export type Database = {
           response_type?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -65,7 +100,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_old_conversations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, chatType, userId } = await req.json();
+    const { message, chatType, userId, conversationId } = await req.json();
     
     if (!message || !chatType || !userId) {
       throw new Error('Missing required parameters');
@@ -100,6 +100,7 @@ serve(async (req) => {
 
     await supabase.from('chat_messages').insert({
       user_id: userId,
+      conversation_id: conversationId || null,
       message: message,
       response: response,
       response_type: responseType,
