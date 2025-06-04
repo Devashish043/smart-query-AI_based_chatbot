@@ -1,12 +1,39 @@
 
 import React from 'react';
-import ChatInterface from '../components/ChatInterface';
+import { AuthProvider, useAuth } from '../components/auth/AuthProvider';
+import AuthForm from '../components/auth/AuthForm';
+import EnhancedChatInterface from '../components/EnhancedChatInterface';
+import DynamicBackground from '../components/DynamicBackground';
+
+const AppContent = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <DynamicBackground />
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen relative">
+      <DynamicBackground />
+      {user ? (
+        <EnhancedChatInterface />
+      ) : (
+        <AuthForm onAuthSuccess={() => {}} />
+      )}
+    </div>
+  );
+};
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <ChatInterface />
-    </div>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 
