@@ -29,68 +29,39 @@ serve(async (req) => {
 
     let response;
     let responseType = 'text';
-    let apiUsed = '';
+    let apiUsed = 'openai-gpt';
 
-    if (chatType === 'image') {
-      // Generate image with DALL-E 3
-      const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'dall-e-3',
-          prompt: message,
-          n: 1,
-          size: '1024x1024',
-          quality: 'standard'
-        }),
-      });
-
-      const imageData = await imageResponse.json();
-      
-      if (!imageResponse.ok) {
-        throw new Error(imageData.error?.message || 'Failed to generate image');
-      }
-
-      response = imageData.data[0].url;
-      responseType = 'image';
-      apiUsed = 'openai-dalle3';
-    } else {
-      // Use OpenAI GPT for text generation and search
-      let systemPrompt = 'You are a helpful AI assistant.';
-      
-      if (chatType === 'search') {
-        systemPrompt = 'You are a helpful AI assistant that searches for and provides current, accurate information. When answering questions, provide detailed and up-to-date information from reliable sources.';
-      }
-
-      const gptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openaiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: message }
-          ],
-          max_tokens: 1000,
-          temperature: 0.7
-        }),
-      });
-
-      const gptData = await gptResponse.json();
-      
-      if (!gptResponse.ok) {
-        throw new Error(gptData.error?.message || 'Failed to get response from OpenAI');
-      }
-
-      response = gptData.choices[0].message.content;
-      apiUsed = 'openai-gpt';
+    // Use OpenAI GPT for both text generation and search
+    let systemPrompt = 'You are a helpful AI assistant.';
+    
+    if (chatType === 'search') {
+      systemPrompt = 'You are a helpful AI assistant that searches for and provides current, accurate information. When answering questions, provide detailed and up-to-date information from reliable sources.';
     }
+
+    const gptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
+      }),
+    });
+
+    const gptData = await gptResponse.json();
+    
+    if (!gptResponse.ok) {
+      throw new Error(gptData.error?.message || 'Failed to get response from OpenAI');
+    }
+
+    response = gptData.choices[0].message.content;
 
     // Store the conversation in the database
     const supabase = createClient(

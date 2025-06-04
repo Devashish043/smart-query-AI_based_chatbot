@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Sparkles, Search, Image, LogOut } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Search, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,7 +13,7 @@ interface Message {
   id: string;
   text: string;
   sender: 'user' | 'bot';
-  type: 'text' | 'image';
+  type: 'text';
   timestamp: Date;
   apiUsed?: string;
 }
@@ -31,7 +31,7 @@ const EnhancedChatInterface = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m your AI assistant powered by OpenAI. I can help you with text generation, image creation, and web search. What would you like to do today?',
+      text: 'Hello! I\'m your AI assistant powered by OpenAI. I can help you with text generation and web search. What would you like to do today?',
       sender: 'bot',
       type: 'text',
       timestamp: new Date()
@@ -51,13 +51,6 @@ const EnhancedChatInterface = () => {
       icon: <Sparkles className="w-5 h-5" />,
       description: 'Generate creative text using GPT-4o-mini',
       color: 'from-blue-500 to-cyan-500'
-    },
-    {
-      id: 'image',
-      label: 'Image Generation', 
-      icon: <Image className="w-5 h-5" />,
-      description: 'Create stunning images with DALL-E 3',
-      color: 'from-purple-500 to-pink-500'
     },
     {
       id: 'search',
@@ -133,7 +126,7 @@ const EnhancedChatInterface = () => {
             id: `${msg.id}-bot`,
             text: msg.response,
             sender: 'bot',
-            type: msg.response_type as 'text' | 'image' || 'text',
+            type: 'text',
             timestamp: new Date(msg.created_at || ''),
             apiUsed: msg.api_used || undefined
           });
@@ -161,7 +154,7 @@ const EnhancedChatInterface = () => {
     setMessages([
       {
         id: '1',
-        text: 'Hello! I\'m your AI assistant powered by OpenAI. I can help you with text generation, image creation, and web search. What would you like to do today?',
+        text: 'Hello! I\'m your AI assistant powered by OpenAI. I can help you with text generation and web search. What would you like to do today?',
         sender: 'bot',
         type: 'text',
         timestamp: new Date()
@@ -212,7 +205,7 @@ const EnhancedChatInterface = () => {
         id: (Date.now() + 1).toString(),
         text: data.response,
         sender: 'bot',
-        type: data.responseType || 'text',
+        type: 'text',
         timestamp: new Date(),
         apiUsed: data.apiUsed
       };
@@ -221,7 +214,7 @@ const EnhancedChatInterface = () => {
       
       toast({
         title: "Response generated",
-        description: `Using ${data.apiUsed === 'openai-dalle3' ? 'DALL-E 3' : 'GPT-4o-mini'}`,
+        description: `Using GPT-4o-mini`,
       });
 
     } catch (error: any) {
@@ -281,7 +274,7 @@ const EnhancedChatInterface = () => {
             <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               AI Chat Assistant
             </h1>
-            <p className="text-slate-400">Powered by OpenAI GPT-4o-mini and DALL-E 3</p>
+            <p className="text-slate-400">Powered by OpenAI GPT-4o-mini</p>
             <p className="text-slate-500 text-sm mt-1">{conversationTitle}</p>
           </div>
         </div>
@@ -331,29 +324,14 @@ const EnhancedChatInterface = () => {
                       : 'bg-slate-800/80 text-slate-100 border border-slate-700/50'
                   }`}
                 >
-                  {message.type === 'image' ? (
-                    <div className="space-y-2">
-                      <img 
-                        src={message.text} 
-                        alt="Generated image" 
-                        className="rounded-lg max-w-full"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling!.textContent = 'Failed to load image';
-                        }}
-                      />
-                      <p className="text-xs opacity-70">Generated with DALL-E 3</p>
-                    </div>
-                  ) : (
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
-                  )}
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
                   <div className="flex justify-between items-center mt-2">
                     <span className="text-xs opacity-70">
                       {message.timestamp.toLocaleTimeString()}
                     </span>
                     {message.apiUsed && (
                       <span className="text-xs opacity-70 bg-slate-700/50 px-2 py-1 rounded">
-                        {message.apiUsed === 'openai-dalle3' ? 'DALL-E 3' : 'GPT-4o-mini'}
+                        GPT-4o-mini
                       </span>
                     )}
                   </div>
@@ -381,7 +359,7 @@ const EnhancedChatInterface = () => {
       </Card>
 
       {/* Chat Options */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {chatOptions.map((option) => (
           <Card
             key={option.id}
@@ -413,9 +391,7 @@ const EnhancedChatInterface = () => {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
-                  selectedOption === 'image' 
-                    ? 'Describe the image you want to create...'
-                    : selectedOption === 'search'
+                  selectedOption === 'search'
                     ? 'What would you like to search for?'
                     : 'Type your message here...'
                 }
@@ -435,9 +411,7 @@ const EnhancedChatInterface = () => {
             <div className="mt-3 text-xs text-slate-400 flex items-center gap-2">
               {chatOptions.find(opt => opt.id === selectedOption)?.icon}
               <span>Mode: {chatOptions.find(opt => opt.id === selectedOption)?.label}</span>
-              <span className="opacity-60">
-                • {selectedOption === 'image' ? 'DALL-E 3' : 'GPT-4o-mini'}
-              </span>
+              <span className="opacity-60">• GPT-4o-mini</span>
             </div>
           )}
         </CardContent>
