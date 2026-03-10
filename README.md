@@ -64,10 +64,6 @@ npm run dev
 
 ---
 
-## 📸 Screenshots (Optional)
-_Add screenshots or GIFs of the chatbot interface here to make the README visually appealing._
-
----
 
 ## 🤝 Contributing
 Contributions are welcome!  
